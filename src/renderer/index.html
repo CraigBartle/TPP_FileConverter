@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Printing Press File Converter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div>
+                    <h1><img src="../tpp_logo.png" alt="TPP" class="logo">The Printing Press File Converter</h1>
+                    <p>Convert Word, Excel, PowerPoint, and Images to PDF</p>
+                </div>
+                <button id="settingsBtn" class="settings-btn">⚙️ Settings</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="tabs">
+                <button class="tab-button active" id="convertTab">Convert Files</button>
+                <button class="tab-button" id="mergeTab">Merge PDFs</button>
+            </div>
+
+            <div class="tab-content" id="convertTabContent">
+                <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-content">
+                    <div class="drop-icon">📁</div>
+                    <h3>Drop files here to convert</h3>
+                    <p>Or click to select files</p>
+                    <div class="supported-formats">
+                        <div class="format-group">
+                            <strong>Office:</strong> DOC, DOCX, XLS, XLSX, PPT, PPTX
+                        </div>
+                        <div class="format-group">
+                            <strong>Images:</strong> JPG, PNG, TIFF, HEIC
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="output-section">
+                    <label for="outputFolder">Output Folder:</label>
+                    <div class="folder-input">
+                        <input type="text" id="outputFolder" readonly>
+                        <button id="browseFolder" class="browse-btn">Browse</button>
+                    </div>
+                </div>
+
+                <div class="file-list-container" id="fileListContainer" style="display: none;">
+                    <h3>Files to Convert:</h3>
+                    <div class="file-list" id="fileList"></div>
+                    <div class="action-buttons">
+                        <button id="convertBtn" class="convert-btn">Convert All to PDF</button>
+                        <button id="clearBtn" class="clear-btn">Clear List</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <h3>Conversion Progress</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">0 / 0 files converted</div>
+            </div>
+
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <h3>Conversion Results</h3>
+                <div class="results-list" id="resultsList"></div>
+                <button id="openOutputBtn" class="open-output-btn">Open Output Folder</button>
+            </div>
+            </div>
+
+            <div class="tab-content" id="mergeTabContent" style="display: none;">
+                <div class="merge-zone">
+                    <div class="merge-zone-content">
+                        <div class="drop-icon">📄</div>
+                        <h3>Select PDFs to merge</h3>
+                        <p>Click to select PDF files in order</p>
+                        <button id="selectPDFsBtn" class="select-pdfs-btn">Select PDF Files</button>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="output-section">
+                        <label for="mergeOutputFolder">Output Folder:</label>
+                        <div class="folder-input">
+                            <input type="text" id="mergeOutputFolder" readonly>
+                            <button id="browseMergeFolder" class="browse-btn">Browse</button>
+                        </div>
+                    </div>
+
+                    <div class="merge-filename-section">
+                        <label for="mergeFilename">Merged File Name:</label>
+                        <input type="text" id="mergeFilename" value="merged-document.pdf" placeholder="Enter filename...">
+                    </div>
+
+                    <div class="pdf-list-container" id="pdfListContainer" style="display: none;">
+                        <h3>PDFs to Merge (in order):</h3>
+                        <div class="pdf-list" id="pdfList"></div>
+                        <div class="action-buttons">
+                            <button id="mergePDFsBtn" class="convert-btn">Merge PDFs</button>
+                            <button id="clearPDFsBtn" class="clear-btn">Clear List</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="merge-results-section" id="mergeResultsSection" style="display: none;">
+                    <h3>Merge Results</h3>
+                    <div class="merge-results-list" id="mergeResultsList"></div>
+                    <button id="openMergeOutputBtn" class="open-output-btn">Open Output Folder</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Settings</h2>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label for="conversionMethod">Office Conversion Method:</label>
+                    <select id="conversionMethod">
+                        <option value="auto">Auto (Try VBS, fallback to PowerShell)</option>
+                        <option value="native">Microsoft Office (VBS Scripts)</option>
+                        <option value="powershell">Microsoft Office (PowerShell)</option>
+                    </select>
+                    <div class="setting-info">
+                        <div id="currentMethod" class="current-method"></div>
+                        <div id="officeStatus" class="office-status"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveSettings" class="save-btn">Save Settings</button>
+                <button id="cancelSettings" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

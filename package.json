@@ -1,6 +1,6 @@
 {
   "name": "the-printing-press-file-converter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The Printing Press File Converter - converts various file types to PDF",
   "main": "src/main.js",
   "scripts": {
@@ -22,7 +22,6 @@
     "electron-builder": "^24.6.4"
   },
   "dependencies": {
-    "sharp": "^0.32.6",
     "pdf-lib": "^1.17.1"
   },
   "build": {
@@ -35,12 +34,17 @@
     "files": [
       "src/**/*",
       "binaries/**/*",
+      "ImageMagick-7.1.2-3-portable-Q16-HDRI-x64/**/*",
       "package.json"
     ],
     "extraResources": [
       {
         "from": "binaries/",
         "to": "binaries/"
+      },
+      {
+        "from": "ImageMagick-7.1.2-3-portable-Q16-HDRI-x64/",
+        "to": "ImageMagick/"
       }
     ],
     "win": {

@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const { exec } = require('child_process');
 const { promisify } = require('util');
-const sharp = require('sharp');
+// Removed Sharp dependency - using bundled ImageMagick for all image conversions
 const { app } = require('electron');
 const os = require('os');
 const SettingsManager = require('./settings');
@@ -304,58 +304,79 @@ class FileConverter {
   }
 
   async convertImageToPDF(inputPath, outputPath) {
+    // Use bundled ImageMagick for all image conversions (handles all formats including HEIC 4.3000+ codecs)
+    return await this.convertImageViaImageMagick(inputPath, outputPath);
+  }
+
+
+  async convertImageViaImageMagick(inputPath, outputPath) {
+    // Use bundled ImageMagick 7.1.2+ for robust image conversion (excellent HEIC support including 4.3000+ codecs)
+    const tempDir = os.tmpdir();
+    const tempPngPath = path.join(tempDir, `temp_magick_${Date.now()}.png`);
+
     try {
-      const image = sharp(inputPath);
-      const metadata = await image.metadata();
-      
-      const pdfWidth = 595;
-      const pdfHeight = 842;
-      
-      let resizeOptions = {};
-      if (metadata.width > pdfWidth || metadata.height > pdfHeight) {
-        resizeOptions = {
-          width: pdfWidth - 40,
-          height: pdfHeight - 40,
-          fit: 'inside',
-          withoutEnlargement: true
-        };
+      // Get the bundled ImageMagick path
+      const bundledMagickPath = path.join(process.resourcesPath, 'ImageMagick', 'magick.exe');
+
+      // Use only the bundled ImageMagick
+      try {
+        await execAsync(`"${bundledMagickPath}" "${inputPath}" "${tempPngPath}"`);
+      } catch (error) {
+        throw new Error(`Bundled ImageMagick failed. This may indicate a corrupted installation or unsupported file format. Error: ${error.message}`);
       }
 
-      const processedImage = Object.keys(resizeOptions).length > 0 
-        ? image.resize(resizeOptions)
-        : image;
+      // Check if PNG was created successfully
+      try {
+        await fs.access(tempPngPath);
+      } catch {
+        throw new Error('ImageMagick conversion failed - no output file created');
+      }
 
-      const imageBuffer = await processedImage
-        .png()
-        .toBuffer();
+      // Convert the PNG to PDF
+      const pngBuffer = await fs.readFile(tempPngPath);
 
-      const { PDFDocument, StandardFonts } = require('pdf-lib');
+      const { PDFDocument } = require('pdf-lib');
       const pdfDoc = await PDFDocument.create();
-      
-      // Add metadata for better compatibility
+
+      // Add metadata
       pdfDoc.setTitle(path.basename(inputPath, path.extname(inputPath)));
-      pdfDoc.setSubject('Image converted to PDF');
+      pdfDoc.setSubject('Image converted to PDF via ImageMagick');
       pdfDoc.setCreator('The Printing Press File Converter');
-      pdfDoc.setProducer('The Printing Press File Converter v1.0.0');
+      pdfDoc.setProducer('The Printing Press File Converter v1.1.0');
       pdfDoc.setCreationDate(new Date());
       pdfDoc.setModificationDate(new Date());
-      
-      const page = pdfDoc.addPage([pdfWidth, pdfHeight]);
 
-      const pngImage = await pdfDoc.embedPng(imageBuffer);
-      const { width, height } = pngImage.scale(1);
+      const page = pdfDoc.addPage([595, 842]);
+      const pngImage = await pdfDoc.embedPng(pngBuffer);
 
-      const x = (pdfWidth - width) / 2;
-      const y = (pdfHeight - height) / 2;
+      // Calculate scaling to fit within page margins
+      const imgWidth = pngImage.width;
+      const imgHeight = pngImage.height;
+      const maxWidth = 555; // 595 - 40 margins
+      const maxHeight = 802; // 842 - 40 margins
+
+      let finalWidth = imgWidth;
+      let finalHeight = imgHeight;
+
+      if (imgWidth > maxWidth || imgHeight > maxHeight) {
+        const widthRatio = maxWidth / imgWidth;
+        const heightRatio = maxHeight / imgHeight;
+        const ratio = Math.min(widthRatio, heightRatio);
+
+        finalWidth = imgWidth * ratio;
+        finalHeight = imgHeight * ratio;
+      }
+
+      const x = (595 - finalWidth) / 2;
+      const y = (842 - finalHeight) / 2;
 
       page.drawImage(pngImage, {
-        x: x > 0 ? x : 20,
-        y: y > 0 ? y : 20,
-        width: x > 0 ? width : pdfWidth - 40,
-        height: y > 0 ? height : pdfHeight - 40
+        x: x,
+        y: y,
+        width: finalWidth,
+        height: finalHeight
       });
 
-      // Save with optimization for better compatibility
       const pdfBytes = await pdfDoc.save({
         useObjectStreams: false,
         addDefaultPage: false
@@ -363,8 +384,9 @@ class FileConverter {
       await fs.writeFile(outputPath, pdfBytes);
 
       return outputPath;
-    } catch (error) {
-      throw new Error(`Image conversion failed: ${error.message}`);
+    } finally {
+      // Clean up temp file
+      await fs.unlink(tempPngPath).catch(() => {});
     }
   }
 
